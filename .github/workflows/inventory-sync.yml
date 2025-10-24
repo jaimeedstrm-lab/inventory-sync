@@ -41,6 +41,7 @@ jobs:
         if [ -n "$EMAIL_JSON" ]; then
           printf '%s' "$EMAIL_JSON" > config/email.json
         fi
+        ls -R config
 
     - name: Run inventory sync
       env:
