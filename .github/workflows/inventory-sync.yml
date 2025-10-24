@@ -24,11 +24,30 @@ jobs:
         pip install -r requirements.txt
         playwright install chromium
         playwright install-deps chromium
-    
+
+    - name: Prepare configuration files
+      env:
+        SUPPLIERS_JSON: ${{ secrets.SUPPLIERS_JSON }}
+        SHOPIFY_JSON: ${{ secrets.SHOPIFY_JSON }}
+        EMAIL_JSON: ${{ secrets.EMAIL_JSON }}
+      run: |
+        mkdir -p config
+        if [ -n "$SUPPLIERS_JSON" ]; then
+          printf '%s' "$SUPPLIERS_JSON" > config/suppliers.json
+        fi
+        if [ -n "$SHOPIFY_JSON" ]; then
+          printf '%s' "$SHOPIFY_JSON" > config/shopify.json
+        fi
+        if [ -n "$EMAIL_JSON" ]; then
+          printf '%s' "$EMAIL_JSON" > config/email.json
+        fi
+
     - name: Run inventory sync
       env:
         SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
         SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
         OASE_USERNAME: ${{ secrets.OASE_USERNAME }}
         OASE_PASSWORD: ${{ secrets.OASE_PASSWORD }}
+        OASE_OUTDOORS_USERNAME: ${{ secrets.OASE_USERNAME }}
+        OASE_OUTDOORS_PASSWORD: ${{ secrets.OASE_PASSWORD }}
       run: python3 main.py --supplier oase_outdoors

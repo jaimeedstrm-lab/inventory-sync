@@ -3,6 +3,7 @@
     {
       "name": "oase_outdoors",
       "type": "api",
+      "env_prefix": "OASE",
       "enabled": true,
       "config": {
         "base_url": "https://api.oase-outdoors.com",
@@ -15,6 +16,7 @@
     {
       "name": "supplier_1",
       "type": "scraper",
+      "env_prefix": "SUPPLIER1",
       "enabled": false,
       "config": {
         "login_url": "https://supplier1.com/login",

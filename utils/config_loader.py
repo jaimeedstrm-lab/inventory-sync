@@ -78,14 +78,35 @@ class ConfigLoader:
 
         # Override supplier credentials with environment variables if present
         for supplier in config.get('suppliers', []):
-            supplier_name = supplier['name'].upper()
-            username_key = f"{supplier_name}_USERNAME"
-            password_key = f"{supplier_name}_PASSWORD"
+            supplier_name = supplier.get('name', '')
+            if not supplier_name:
+                continue
 
-            if os.getenv(username_key):
-                supplier['config']['username'] = os.getenv(username_key)
-            if os.getenv(password_key):
-                supplier['config']['password'] = os.getenv(password_key)
+            supplier_config = supplier.setdefault('config', {})
+
+            prefixes = []
+            env_prefix = supplier.get('env_prefix')
+            if env_prefix:
+                prefixes.append(env_prefix)
+            prefixes.append(supplier_name)
+            prefixes.append(supplier_name.replace('-', '_'))
+            prefixes.append(supplier_name.replace('-', '').replace('_', ''))
+            prefixes = [p.upper() for p in prefixes if p]
+
+            def _get_first_env_var(keys):
+                for key in keys:
+                    value = os.getenv(key)
+                    if value:
+                        return value
+                return None
+
+            username = _get_first_env_var([f"{prefix}_USERNAME" for prefix in prefixes])
+            if username:
+                supplier_config['username'] = username
+
+            password = _get_first_env_var([f"{prefix}_PASSWORD" for prefix in prefixes])
+            if password:
+                supplier_config['password'] = password
 
         return config
 

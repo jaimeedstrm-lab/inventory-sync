@@ -151,6 +151,20 @@ pytest tests/
 
 ### Scheduled Execution
 
+#### GitHub Actions (GitHub repository)
+
+1. Push the project to GitHub.
+2. Add repository secrets under **Settings → Secrets and variables → Actions**:
+   - `SHOPIFY_ACCESS_TOKEN`
+   - `SHOPIFY_SHOP_URL`
+   - `OASE_USERNAME`
+   - `OASE_PASSWORD`
+   - Optional: `SUPPLIERS_JSON`, `SHOPIFY_JSON`, `EMAIL_JSON` (full JSON payloads copied from your local config files).
+3. The workflow `.github/workflows/inventory-sync.yml` runs `python main.py` every 6th hour (`cron: 0 */6 * * *`) and can also be triggered manually under **Actions → Inventory Sync → Run workflow**.
+4. All supplier credentials are read from environment variables. Each supplier can define an `env_prefix` (see `config/suppliers.json.example`); for Oase Outdoors the workflow exports both `OASE_USERNAME`/`OASE_PASSWORD` and `OASE_OUTDOORS_USERNAME`/`OASE_OUTDOORS_PASSWORD` to match the loader overrides.
+
+> ⚠️ Before pushing to GitHub, make sure you do **not** commit `.env` or configuration files that contain secrets. Use the secrets above (or keep real config files only in your deployment environment).
+
 #### On Railway (Recommended)
 
 1. Create Railway project
