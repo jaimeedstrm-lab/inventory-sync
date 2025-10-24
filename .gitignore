@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Environment variables
+.env
+
+# Logs
+logs/*.json
+logs/*.csv
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config (with sensitive data)
+config/shopify.json
+config/suppliers.json
+config/email.json
+
+# Playwright
+.playwright/
+playwright-state/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage

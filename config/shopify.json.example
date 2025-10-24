@@ -1,0 +1,10 @@
+{
+  "shop_url": "your-store.myshopify.com",
+  "access_token": "shpat_xxxxxxxxxxxxxxxxxxxxx",
+  "api_version": "2024-10",
+  "rate_limit": {
+    "requests_per_second": 2,
+    "max_retries": 3,
+    "retry_delay_seconds": 2
+  }
+}

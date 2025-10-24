@@ -1,0 +1,51 @@
+{
+  "suppliers": [
+    {
+      "name": "oase_outdoors",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.oase-outdoors.com",
+        "username": "your_username",
+        "password": "your_password",
+        "login_endpoint": "/auth/login",
+        "inventory_endpoint": "/products"
+      }
+    },
+    {
+      "name": "supplier_1",
+      "type": "scraper",
+      "enabled": false,
+      "config": {
+        "login_url": "https://supplier1.com/login",
+        "inventory_url": "https://supplier1.com/inventory",
+        "username": "your_username",
+        "password": "your_password",
+        "selectors": {
+          "username_field": "#username",
+          "password_field": "#password",
+          "submit_button": "button[type='submit']",
+          "inventory_table": "table.inventory"
+        }
+      }
+    }
+  ],
+  "status_mapping": {
+    "in stock": 15,
+    "på lager": 15,
+    "i lager": 15,
+    "low stock": 3,
+    "lite på lager": 3,
+    "låg lagernivå": 3,
+    "out of stock": 0,
+    "ikke på lager": 0,
+    "slut i lager": 0,
+    "restordre": 0,
+    "backorder": 0
+  },
+  "safety_limits": {
+    "max_quantity_drop_percent": 80,
+    "min_quantity_for_zero_check": 50,
+    "enable_safety_checks": true
+  }
+}

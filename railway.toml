@@ -1,0 +1,5 @@
+[build]
+builder = "NIXPACKS"
+[deploy]
+startCommand = "while true; do python3 main.py --supplier oase_outdoors; sleep 21600; done"
+restartPolicyType = "ON_FAILURE"
