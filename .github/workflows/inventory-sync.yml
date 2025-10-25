@@ -43,7 +43,7 @@ jobs:
         fi
         ls -R config
 
-    - name: Run inventory sync
+    - name: Run inventory sync - Oase Outdoors
       env:
         SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
         SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
@@ -53,4 +53,6 @@ jobs:
         OASE_OUTDOORS_PASSWORD: ${{ secrets.OASE_PASSWORD }}
         ORDER_NORDIC_USERNAME: ${{ secrets.ORDER_NORDIC_USERNAME }}
         ORDER_NORDIC_PASSWORD: ${{ secrets.ORDER_NORDIC_PASSWORD }}
+        RESPONSE_NORDIC_USERNAME: ${{ secrets.RESPONSE_NORDIC_USERNAME }}
+        RESPONSE_NORDIC_PASSWORD: ${{ secrets.RESPONSE_NORDIC_PASSWORD }}
       run: python3 main.py
