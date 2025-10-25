@@ -51,4 +51,6 @@ jobs:
         OASE_PASSWORD: ${{ secrets.OASE_PASSWORD }}
         OASE_OUTDOORS_USERNAME: ${{ secrets.OASE_USERNAME }}
         OASE_OUTDOORS_PASSWORD: ${{ secrets.OASE_PASSWORD }}
-      run: python3 main.py --supplier oase_outdoors
+        ORDER_NORDIC_USERNAME: ${{ secrets.ORDER_NORDIC_USERNAME }}
+        ORDER_NORDIC_PASSWORD: ${{ secrets.ORDER_NORDIC_PASSWORD }}
+      run: python3 main.py
