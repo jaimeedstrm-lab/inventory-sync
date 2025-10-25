@@ -7,18 +7,59 @@ on:
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  sync:
+  sync-oase:
+    name: Sync Oase Outdoors
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Prepare configuration files
+      env:
+        SUPPLIERS_JSON: ${{ secrets.SUPPLIERS_JSON }}
+        SHOPIFY_JSON: ${{ secrets.SHOPIFY_JSON }}
+      run: |
+        mkdir -p config
+        if [ -n "$SUPPLIERS_JSON" ]; then
+          printf '%s' "$SUPPLIERS_JSON" > config/suppliers.json
+        fi
+        if [ -n "$SHOPIFY_JSON" ]; then
+          printf '%s' "$SHOPIFY_JSON" > config/shopify.json
+        fi
+
+    - name: Run Oase Outdoors sync
+      env:
+        SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+        SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
+        OASE_USERNAME: ${{ secrets.OASE_USERNAME }}
+        OASE_PASSWORD: ${{ secrets.OASE_PASSWORD }}
+        OASE_OUTDOORS_USERNAME: ${{ secrets.OASE_USERNAME }}
+        OASE_OUTDOORS_PASSWORD: ${{ secrets.OASE_PASSWORD }}
+      run: python3 main.py --supplier oase_outdoors
+
+  sync-order-nordic:
+    name: Sync Order Nordic
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
@@ -29,7 +70,6 @@ jobs:
       env:
         SUPPLIERS_JSON: ${{ secrets.SUPPLIERS_JSON }}
         SHOPIFY_JSON: ${{ secrets.SHOPIFY_JSON }}
-        EMAIL_JSON: ${{ secrets.EMAIL_JSON }}
       run: |
         mkdir -p config
         if [ -n "$SUPPLIERS_JSON" ]; then
@@ -38,21 +78,51 @@ jobs:
         if [ -n "$SHOPIFY_JSON" ]; then
           printf '%s' "$SHOPIFY_JSON" > config/shopify.json
         fi
-        if [ -n "$EMAIL_JSON" ]; then
-          printf '%s' "$EMAIL_JSON" > config/email.json
-        fi
-        ls -R config
 
-    - name: Run inventory sync - Oase Outdoors
+    - name: Run Order Nordic sync
       env:
         SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
         SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
-        OASE_USERNAME: ${{ secrets.OASE_USERNAME }}
-        OASE_PASSWORD: ${{ secrets.OASE_PASSWORD }}
-        OASE_OUTDOORS_USERNAME: ${{ secrets.OASE_USERNAME }}
-        OASE_OUTDOORS_PASSWORD: ${{ secrets.OASE_PASSWORD }}
         ORDER_NORDIC_USERNAME: ${{ secrets.ORDER_NORDIC_USERNAME }}
         ORDER_NORDIC_PASSWORD: ${{ secrets.ORDER_NORDIC_PASSWORD }}
+      run: python3 main.py --supplier order_nordic
+
+  sync-response-nordic:
+    name: Sync Response Nordic
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        playwright install chromium
+        playwright install-deps chromium
+
+    - name: Prepare configuration files
+      env:
+        SUPPLIERS_JSON: ${{ secrets.SUPPLIERS_JSON }}
+        SHOPIFY_JSON: ${{ secrets.SHOPIFY_JSON }}
+      run: |
+        mkdir -p config
+        if [ -n "$SUPPLIERS_JSON" ]; then
+          printf '%s' "$SUPPLIERS_JSON" > config/suppliers.json
+        fi
+        if [ -n "$SHOPIFY_JSON" ]; then
+          printf '%s' "$SHOPIFY_JSON" > config/shopify.json
+        fi
+
+    - name: Run Response Nordic sync
+      env:
+        SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+        SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
         RESPONSE_NORDIC_USERNAME: ${{ secrets.RESPONSE_NORDIC_USERNAME }}
         RESPONSE_NORDIC_PASSWORD: ${{ secrets.RESPONSE_NORDIC_PASSWORD }}
-      run: python3 main.py
+      run: python3 main.py --supplier response_nordic
