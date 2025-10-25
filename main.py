@@ -11,6 +11,7 @@ from core.inventory_updater import InventoryUpdater
 from utils.email_notifier import EmailNotifier
 from suppliers.oase_outdoors import OaseOutdoorsSupplier
 from suppliers.order_nordic import OrderNordicSupplier
+from suppliers.response_nordic import ResponseNordicSupplier
 
 
 def get_supplier_instance(supplier_config: dict, status_mapping: dict):
@@ -34,6 +35,8 @@ def get_supplier_instance(supplier_config: dict, status_mapping: dict):
         return OaseOutdoorsSupplier(supplier_name, config, status_mapping)
     elif supplier_name == "order_nordic":
         return OrderNordicSupplier(supplier_name, config, status_mapping)
+    elif supplier_name == "response_nordic":
+        return ResponseNordicSupplier(supplier_name, config, status_mapping)
     # Add more suppliers here as they are implemented
     else:
         raise ValueError(f"Unknown supplier: {supplier_name}")
@@ -169,8 +172,8 @@ def sync_inventory(
 
                 # Fetch products from supplier
                 with supplier:
-                    # Special handling for Order Nordic (EAN search-based)
-                    if supplier_name == "order_nordic":
+                    # Special handling for Order Nordic and Response Nordic (EAN search-based)
+                    if supplier_name in ["order_nordic", "response_nordic"]:
                         # Extract EANs from Shopify products to search for
                         ean_list = []
                         for key, variant in shopify_variants.items():
@@ -179,11 +182,11 @@ def sync_inventory(
                                 if ean:
                                     ean_list.append(ean)
 
-                        print(f"  Found {len(ean_list)} EANs to search for on Order Nordic")
+                        print(f"  Found {len(ean_list)} EANs to search for on {supplier_name}")
 
                         # Authenticate first
                         if not supplier.authenticate():
-                            raise Exception("Failed to authenticate with Order Nordic")
+                            raise Exception(f"Failed to authenticate with {supplier_name}")
 
                         # Search for products by EAN list
                         supplier_products = supplier.search_products_by_ean_list(ean_list)
