@@ -1,17 +1,47 @@
-# Inventory Sync System
+# Inventory Sync System - Natursortimentet
 
 Automated inventory synchronization system that mirrors stock levels from multiple suppliers to your Shopify store.
 
 ## Features
 
-- ✅ **Multiple Supplier Support** - API-based and web scraping integrations
+- ✅ **Multiple Supplier Support** - API-based (Oase) and web scraping (Order Nordic) integrations
+- ✅ **Tag-Based Filtering** - Only syncs products from the correct supplier
 - ✅ **Smart Matching** - Products matched by EAN (priority) with SKU fallback
 - ✅ **Safety Checks** - Prevents accidental stockouts with configurable limits
 - ✅ **Comprehensive Logging** - JSON logs for every sync with full audit trail
 - ✅ **Email Notifications** - Alerts for products not found and flagged items
 - ✅ **Dry Run Mode** - Preview changes before applying
 - ✅ **Rate Limiting** - Respects Shopify API limits with automatic retry
+- ✅ **Web Scraping** - Playwright-based scraping for suppliers without APIs
 - ✅ **Extensible** - Easy to add new suppliers with plugin architecture
+
+## Supported Suppliers
+
+1. **Oase Outdoors** - API-based integration (~30 seconds for 468 products)
+2. **Order Nordic** - Web scraping integration (~40-60 minutes for 1250 products)
+
+## Quick Start
+
+```bash
+# Test with a few products (dry-run)
+python3 test_mini_sync.py
+
+# Run full integration test
+python3 test_full_integration.py
+
+# Test with real updates (interactive)
+python3 test_real_update_custom.py
+
+# Run production sync (dry-run first!)
+python3 main.py --supplier order_nordic --dry-run
+
+# Run for real
+python3 main.py --supplier order_nordic
+```
+
+**Important**: Products must be tagged in Shopify:
+- `supplier:oase_outdoors` for Oase products
+- `supplier:order_nordic` for Order Nordic products
 
 ## System Requirements
 

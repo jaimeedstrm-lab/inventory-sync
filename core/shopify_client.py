@@ -100,8 +100,11 @@ class ShopifyClient:
 
         raise requests.exceptions.RequestException(f"Failed after {self.max_retries} retries")
 
-    def get_all_products(self) -> List[Dict[str, Any]]:
+    def get_all_products(self, tags: Optional[str] = None) -> List[Dict[str, Any]]:
         """Fetch all products with variants from Shopify.
+
+        Args:
+            tags: Optional comma-separated list of tags to filter by (e.g., "supplier:order_nordic")
 
         Returns:
             List of product dictionaries with variants
@@ -113,7 +116,11 @@ class ShopifyClient:
         url = f"{self.base_url}/products.json"
         params = {"limit": 250}  # Maximum allowed per page
 
-        print("Fetching products from Shopify...")
+        if tags:
+            params["tags"] = tags
+            print(f"Fetching products from Shopify with tags: {tags}...")
+        else:
+            print("Fetching products from Shopify...")
 
         while url:
             # Make request manually to access headers
@@ -140,7 +147,7 @@ class ShopifyClient:
                 # Get next page URL from Link header
                 link_header = response.headers.get("Link", "")
                 url = None  # Reset URL
-                params = {}  # Clear params for next iteration
+                # NOTE: Don't clear params here - pagination URLs include all params
 
                 # Parse Link header for next page
                 # Format: <https://...>; rel="next", <https://...>; rel="previous"
@@ -149,6 +156,7 @@ class ShopifyClient:
                         if 'rel="next"' in link:
                             # Extract URL from <URL>
                             url = link.split(";")[0].strip().strip("<>")
+                            params = {}  # Clear params when using full URL from pagination
                             break
 
             except requests.exceptions.RequestException as e:
@@ -158,8 +166,12 @@ class ShopifyClient:
         print(f"Total products fetched: {len(all_products)}")
         return all_products
 
-    def get_product_variants_with_inventory(self) -> Dict[str, Dict[str, Any]]:
+    def get_product_variants_with_inventory(self, tags: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
         """Get all product variants with their inventory information.
+
+        Args:
+            tags: Optional comma-separated list of tags to filter by (e.g., "supplier:order_nordic")
+                  Filtering is done client-side for reliability.
 
         Returns:
             Dictionary mapping identifiers (EAN/SKU) to variant data:
@@ -176,7 +188,27 @@ class ShopifyClient:
                 "SKU:ABC-123": { ... }
             }
         """
-        products = self.get_all_products()
+        # Fetch all products (without server-side filtering)
+        all_products = self.get_all_products(tags=None)
+
+        # Filter client-side if tags specified
+        if tags:
+            filter_tags = [t.strip() for t in tags.split(',')]
+            filtered_products = []
+
+            for product in all_products:
+                product_tags_str = product.get('tags', '')
+                if product_tags_str:
+                    product_tags = [t.strip() for t in product_tags_str.split(',')]
+                    # Check if any of the filter tags match
+                    if any(filter_tag in product_tags for filter_tag in filter_tags):
+                        filtered_products.append(product)
+
+            print(f"  Client-side filtered: {len(all_products)} -> {len(filtered_products)} products")
+            products = filtered_products
+        else:
+            products = all_products
+
         variant_map = {}
 
         for product in products:

@@ -10,6 +10,7 @@ from core.inventory_matcher import InventoryMatcher
 from core.inventory_updater import InventoryUpdater
 from utils.email_notifier import EmailNotifier
 from suppliers.oase_outdoors import OaseOutdoorsSupplier
+from suppliers.order_nordic import OrderNordicSupplier
 
 
 def get_supplier_instance(supplier_config: dict, status_mapping: dict):
@@ -31,9 +32,9 @@ def get_supplier_instance(supplier_config: dict, status_mapping: dict):
 
     if supplier_name == "oase_outdoors":
         return OaseOutdoorsSupplier(supplier_name, config, status_mapping)
+    elif supplier_name == "order_nordic":
+        return OrderNordicSupplier(supplier_name, config, status_mapping)
     # Add more suppliers here as they are implemented
-    # elif supplier_name == "supplier_1":
-    #     return Supplier1(supplier_name, config, status_mapping)
     else:
         raise ValueError(f"Unknown supplier: {supplier_name}")
 
@@ -100,37 +101,6 @@ def sync_inventory(
             logger.log_error("shopify_connection", "Failed to connect to Shopify")
             raise Exception("Shopify connection failed")
 
-        # Fetch Shopify products
-        print("\nFetching products from Shopify...")
-        shopify_variants = shopify.get_product_variants_with_inventory()
-
-        # Initialize matcher
-        matcher = InventoryMatcher(shopify_variants)
-        stats = matcher.get_stats()
-        print(f"✓ Loaded {stats['total_variant_identifiers']} product identifiers from Shopify")
-        print(f"  - Products with EAN: {stats['products_with_ean']}")
-        print(f"  - Products with SKU: {stats['products_with_sku']}")
-
-        # Check for duplicates in Shopify
-        duplicates = matcher.get_duplicate_identifiers()
-        if duplicates:
-            print(f"\n⚠️  Found {len(duplicates)} duplicate identifiers in Shopify:")
-            for dup in duplicates:
-                logger.log_duplicate(
-                    identifier=dup["identifier"],
-                    identifier_type=dup["type"],
-                    count=dup["count"],
-                    products=dup["products"]
-                )
-                print(f"  - {dup['type']}: {dup['identifier']} ({dup['count']} products)")
-
-        # Initialize inventory updater
-        updater = InventoryUpdater(
-            max_quantity_drop_percent=safety_limits["max_quantity_drop_percent"],
-            min_quantity_for_zero_check=safety_limits["min_quantity_for_zero_check"],
-            enable_safety_checks=safety_limits["enable_safety_checks"]
-        )
-
         # Get enabled suppliers
         enabled_suppliers = config_loader.get_enabled_suppliers()
 
@@ -150,18 +120,76 @@ def sync_inventory(
 
         print(f"\nProcessing {len(enabled_suppliers)} supplier(s)...")
 
+        # Initialize inventory updater (once for all suppliers)
+        updater = InventoryUpdater(
+            max_quantity_drop_percent=safety_limits["max_quantity_drop_percent"],
+            min_quantity_for_zero_check=safety_limits["min_quantity_for_zero_check"],
+            enable_safety_checks=safety_limits["enable_safety_checks"]
+        )
+
         # Process each supplier
         for supplier_config in enabled_suppliers:
             supplier_name = supplier_config["name"]
             logger.log_supplier_start(supplier_name)
 
             try:
+                # Fetch Shopify products filtered by this supplier's tag
+                supplier_tag = supplier_config.get("shopify_tag")
+
+                print(f"\nFetching products from Shopify for {supplier_name}...")
+                if supplier_tag:
+                    print(f"  Filtering by tag: {supplier_tag}")
+                    shopify_variants = shopify.get_product_variants_with_inventory(tags=supplier_tag)
+                else:
+                    print(f"  ⚠️  No shopify_tag configured - fetching ALL products (slower)")
+                    shopify_variants = shopify.get_product_variants_with_inventory()
+
+                # Initialize matcher for this supplier
+                matcher = InventoryMatcher(shopify_variants)
+                stats = matcher.get_stats()
+                print(f"✓ Loaded {stats['total_variant_identifiers']} product identifiers from Shopify")
+                print(f"  - Products with EAN: {stats['products_with_ean']}")
+                print(f"  - Products with SKU: {stats['products_with_sku']}")
+
+                # Check for duplicates in Shopify
+                duplicates = matcher.get_duplicate_identifiers()
+                if duplicates:
+                    print(f"\n⚠️  Found {len(duplicates)} duplicate identifiers in Shopify:")
+                    for dup in duplicates:
+                        logger.log_duplicate(
+                            identifier=dup["identifier"],
+                            identifier_type=dup["type"],
+                            count=dup["count"],
+                            products=dup["products"]
+                        )
+                        print(f"  - {dup['type']}: {dup['identifier']} ({dup['count']} products)")
+
                 # Get supplier instance
                 supplier = get_supplier_instance(supplier_config, status_mapping)
 
                 # Fetch products from supplier
                 with supplier:
-                    supplier_products = supplier.get_products()
+                    # Special handling for Order Nordic (EAN search-based)
+                    if supplier_name == "order_nordic":
+                        # Extract EANs from Shopify products to search for
+                        ean_list = []
+                        for key, variant in shopify_variants.items():
+                            if key.startswith("EAN:"):
+                                ean = variant.get("barcode")
+                                if ean:
+                                    ean_list.append(ean)
+
+                        print(f"  Found {len(ean_list)} EANs to search for on Order Nordic")
+
+                        # Authenticate first
+                        if not supplier.authenticate():
+                            raise Exception("Failed to authenticate with Order Nordic")
+
+                        # Search for products by EAN list
+                        supplier_products = supplier.search_products_by_ean_list(ean_list)
+                    else:
+                        # Regular API-based suppliers
+                        supplier_products = supplier.get_products()
 
                 logger.increment_supplier_products(len(supplier_products))
 
