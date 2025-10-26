@@ -56,7 +56,7 @@ class OrderNordicSupplier(BaseSupplier):
             self.page.set_default_timeout(30000)  # 30 seconds
 
             print(f"  Navigating to {self.base_url}...")
-            self.page.goto(self.base_url, wait_until="networkidle")
+            self.page.goto(self.base_url, wait_until="domcontentloaded", timeout=30000)
 
             # Wait a bit for page to fully load
             self.page.wait_for_timeout(2000)
@@ -161,17 +161,29 @@ class OrderNordicSupplier(BaseSupplier):
             raise Exception("Not authenticated. Call authenticate() first.")
 
         try:
+            # Go back to homepage to ensure clean state
+            try:
+                self.page.goto(self.base_url, timeout=30000, wait_until="domcontentloaded")
+                self.page.wait_for_timeout(500)
+            except PlaywrightTimeout:
+                print(f"  Warning: Timeout loading homepage for EAN {ean}, skipping...")
+                return None
+
             # Search in desktop header search box
             # Try desktop search first, fall back to mobile if needed
             search_box = None
 
             try:
                 search_box = self.page.locator('#modern-header-desktop-search-input').first
-                search_box.wait_for(state="visible", timeout=2000)
-            except:
-                # Try generic search if desktop not found
-                search_box = self.page.locator('input[name="keywords"][type="search"]').first
                 search_box.wait_for(state="visible", timeout=5000)
+            except:
+                try:
+                    # Try generic search if desktop not found
+                    search_box = self.page.locator('input[name="keywords"][type="search"]').first
+                    search_box.wait_for(state="visible", timeout=5000)
+                except:
+                    print(f"  Warning: Could not find search box for EAN {ean}, skipping...")
+                    return None
 
             # Clear any existing text and fill with EAN
             search_box.click()  # Focus the field
@@ -180,9 +192,13 @@ class OrderNordicSupplier(BaseSupplier):
             # Submit search
             search_box.press("Enter")
 
-            # Wait for search results or product page
-            self.page.wait_for_load_state("networkidle", timeout=10000)
-            self.page.wait_for_timeout(1000)  # Extra wait for dynamic content
+            # Wait for search results or product page with longer timeout
+            try:
+                self.page.wait_for_load_state("domcontentloaded", timeout=30000)
+                self.page.wait_for_timeout(1000)  # Extra wait for dynamic content
+            except PlaywrightTimeout:
+                print(f"  Warning: Timeout waiting for search results for EAN {ean}, skipping...")
+                return None
 
             # Check if we landed on a product page directly or search results
             # Look for EAN verification on product page
@@ -199,11 +215,11 @@ class OrderNordicSupplier(BaseSupplier):
                     # Try product image link first
                     try:
                         first_result = self.page.locator('a.image.cd-item').first
-                        first_result.wait_for(state="visible", timeout=2000)
+                        first_result.wait_for(state="visible", timeout=3000)
                     except:
                         # Try product name link
                         first_result = self.page.locator('h2.product-name a').first
-                        first_result.wait_for(state="visible", timeout=2000)
+                        first_result.wait_for(state="visible", timeout=3000)
 
                     if not first_result:
                         # No results found
@@ -211,20 +227,26 @@ class OrderNordicSupplier(BaseSupplier):
 
                     # Click the product
                     first_result.click()
-                    self.page.wait_for_load_state("networkidle", timeout=10000)
-                    self.page.wait_for_timeout(1000)
 
-                    # Verify we're on a product page (don't need to verify EAN yet)
-                except:
+                    try:
+                        self.page.wait_for_load_state("domcontentloaded", timeout=30000)
+                        self.page.wait_for_timeout(1000)
+                    except PlaywrightTimeout:
+                        print(f"  Warning: Timeout loading product page for EAN {ean}, skipping...")
+                        return None
+
+                except Exception as e:
                     # Product not found or couldn't click
+                    print(f"  Warning: Could not find product in search results for EAN {ean}: {str(e)}")
                     return None
 
             # Scrape product data
             product_data = self._scrape_product_page(ean)
             return product_data
 
-        except PlaywrightTimeout:
+        except PlaywrightTimeout as e:
             # Product not found or timeout
+            print(f"  Warning: Playwright timeout for EAN {ean}: {str(e)}")
             return None
         except Exception as e:
             print(f"  Warning: Error searching for EAN {ean}: {str(e)}")
