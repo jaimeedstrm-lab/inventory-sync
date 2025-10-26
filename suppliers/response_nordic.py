@@ -158,26 +158,33 @@ class ResponseNordicSupplier(BaseSupplier):
             if not search_box:
                 raise Exception("Could not find search box with any known selector")
 
-            # Type in the EAN to trigger instant search
-            # Use type() instead of fill() for better instant search triggering
+            # Clear search box completely first
             search_box.click()
+            search_box.fill("")
             self.page.wait_for_timeout(500)
 
+            # Close any existing instant search popup by pressing Escape
+            try:
+                search_box.press("Escape")
+                self.page.wait_for_timeout(300)
+            except:
+                pass
+
             # Type character by character to trigger instant search
-            search_box.type(ean, delay=100)
+            # Slower typing to ensure instant search triggers properly
+            search_box.type(ean, delay=200)
             print(f"  Typed EAN: {ean}")
 
-            # Wait for instant search results popup to appear
+            # Wait even longer for instant search results popup to appear
             print(f"  Waiting for instant search results...")
-            self.page.wait_for_timeout(2500)  # Give time for instant search to populate
+            self.page.wait_for_timeout(5000)  # Increased to 5 seconds
 
             # Look for product link in instant search popup
-            # Based on your HTML: <a class="NoUnderLine" data-bind="attr:{ href: ProduktLink, ...}">
             product_link = self.page.locator('a.NoUnderLine[data-bind*="ProduktLink"]').first
 
             try:
-                # Wait for the link to be visible
-                product_link.wait_for(state="visible", timeout=5000)
+                # Wait for the link to be visible with much longer timeout
+                product_link.wait_for(state="visible", timeout=10000)  # Increased to 10 seconds
                 print(f"  ✓ Found product in instant search preview")
 
                 # Click the first/only product link
@@ -190,7 +197,9 @@ class ResponseNordicSupplier(BaseSupplier):
                 print(f"  Product page loaded: {self.page.url}")
 
             except PlaywrightTimeout:
+                # Instant search didn't show results - product might not exist in supplier's inventory
                 print(f"  ✗ No instant search results found for EAN: {ean}")
+                # Product not found in supplier's inventory - return None (will show as 0 in Shopify)
                 return None
 
             # Scrape and verify product data from the product page
