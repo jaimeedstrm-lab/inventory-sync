@@ -126,3 +126,43 @@ jobs:
         RESPONSE_NORDIC_USERNAME: ${{ secrets.RESPONSE_NORDIC_USERNAME }}
         RESPONSE_NORDIC_PASSWORD: ${{ secrets.RESPONSE_NORDIC_PASSWORD }}
       run: python3 main.py --supplier response_nordic
+
+  sync-petcare:
+    name: Sync Petcare
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        playwright install chromium
+        playwright install-deps chromium
+
+    - name: Prepare configuration files
+      env:
+        SUPPLIERS_JSON: ${{ secrets.SUPPLIERS_JSON }}
+        SHOPIFY_JSON: ${{ secrets.SHOPIFY_JSON }}
+      run: |
+        mkdir -p config
+        if [ -n "$SUPPLIERS_JSON" ]; then
+          printf '%s' "$SUPPLIERS_JSON" > config/suppliers.json
+        fi
+        if [ -n "$SHOPIFY_JSON" ]; then
+          printf '%s' "$SHOPIFY_JSON" > config/shopify.json
+        fi
+
+    - name: Run Petcare sync
+      env:
+        SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+        SHOPIFY_SHOP_URL: ${{ secrets.SHOPIFY_SHOP_URL }}
+        PETCARE_USERNAME: ${{ secrets.PETCARE_USERNAME }}
+        PETCARE_PASSWORD: ${{ secrets.PETCARE_PASSWORD }}
+      run: python3 main.py --supplier petcare
