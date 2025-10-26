@@ -63,7 +63,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        playwright install --with-deps chromium
+        playwright install chromium
+        playwright install-deps chromium
 
     - name: Prepare configuration files
       env:
@@ -102,7 +103,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        playwright install --with-deps chromium
+        playwright install chromium
+        playwright install-deps chromium
 
     - name: Prepare configuration files
       env:
@@ -141,7 +143,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        playwright install --with-deps chromium
+        playwright install chromium
+        playwright install-deps chromium
 
     - name: Prepare configuration files
       env:
