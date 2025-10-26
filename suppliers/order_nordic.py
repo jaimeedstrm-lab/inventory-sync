@@ -161,14 +161,6 @@ class OrderNordicSupplier(BaseSupplier):
             raise Exception("Not authenticated. Call authenticate() first.")
 
         try:
-            # Go back to homepage to ensure clean state
-            try:
-                self.page.goto(self.base_url, timeout=30000, wait_until="domcontentloaded")
-                self.page.wait_for_timeout(500)
-            except PlaywrightTimeout:
-                print(f"  Warning: Timeout loading homepage for EAN {ean}, skipping...")
-                return None
-
             # Search in desktop header search box
             # Try desktop search first, fall back to mobile if needed
             search_box = None
