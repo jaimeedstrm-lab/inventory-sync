@@ -211,15 +211,21 @@ class ShopifyClient:
 
         variant_map = {}
 
+        # Get primary location ID for inventory updates
+        primary_location_id = self.get_primary_location_id()
+
         for product in products:
             for variant in product.get("variants", []):
                 variant_data = {
                     "product_id": product["id"],
                     "variant_id": variant["id"],
                     "inventory_item_id": variant.get("inventory_item_id"),
+                    "location_id": primary_location_id,
                     "sku": variant.get("sku"),
                     "barcode": variant.get("barcode"),
                     "title": f"{product['title']} - {variant['title']}",
+                    "product_title": product.get("title"),
+                    "variant_title": variant.get("title"),
                     "inventory_quantity": variant.get("inventory_quantity", 0)
                 }
 

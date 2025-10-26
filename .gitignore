@@ -17,6 +17,9 @@ logs/*.json
 logs/*.csv
 logs/*.log
 
+# Cookies (session data)
+cookies/
+
 # IDE
 .vscode/
 .idea/
@@ -40,3 +43,10 @@ playwright-state/
 .pytest_cache/
 htmlcov/
 .coverage
+
+# Test files and debug scripts
+test_*.py
+debug_*.py
+*_debug.py
+*.png
+*.html

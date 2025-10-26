@@ -19,6 +19,8 @@ Automated inventory synchronization system that mirrors stock levels from multip
 
 1. **Oase Outdoors** - API-based integration (~30 seconds for 468 products)
 2. **Order Nordic** - Web scraping integration (~40-60 minutes for 1250 products)
+3. **Response Nordic** - Web scraping integration with EAN search
+4. **Petcare** - Web scraping integration with SKU search and reCAPTCHA handling
 
 ## Quick Start
 
@@ -42,6 +44,8 @@ python3 main.py --supplier order_nordic
 **Important**: Products must be tagged in Shopify:
 - `supplier:oase_outdoors` for Oase products
 - `supplier:order_nordic` for Order Nordic products
+- `supplier:response_nordic` for Response Nordic products
+- `supplier:petcare` for Petcare products
 
 ## System Requirements
 

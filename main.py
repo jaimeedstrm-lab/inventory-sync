@@ -12,6 +12,7 @@ from utils.email_notifier import EmailNotifier
 from suppliers.oase_outdoors import OaseOutdoorsSupplier
 from suppliers.order_nordic import OrderNordicSupplier
 from suppliers.response_nordic import ResponseNordicSupplier
+from suppliers.petcare import PetcareSupplier
 
 
 def get_supplier_instance(supplier_config: dict, status_mapping: dict):
@@ -37,6 +38,8 @@ def get_supplier_instance(supplier_config: dict, status_mapping: dict):
         return OrderNordicSupplier(supplier_name, config, status_mapping)
     elif supplier_name == "response_nordic":
         return ResponseNordicSupplier(supplier_name, config, status_mapping)
+    elif supplier_name == "petcare":
+        return PetcareSupplier(supplier_name, config, status_mapping)
     # Add more suppliers here as they are implemented
     else:
         raise ValueError(f"Unknown supplier: {supplier_name}")
@@ -190,6 +193,24 @@ def sync_inventory(
 
                         # Search for products by EAN list
                         supplier_products = supplier.search_products_by_ean_list(ean_list)
+                    elif supplier_name == "petcare":
+                        # Special handling for Petcare (SKU search-based with EAN verification)
+                        # Extract SKU-EAN pairs from Shopify products
+                        sku_ean_pairs = []
+                        for key, variant in shopify_variants.items():
+                            sku = variant.get("sku")
+                            ean = variant.get("barcode")
+                            if sku:  # SKU is required for Petcare search
+                                sku_ean_pairs.append((sku, ean))
+
+                        print(f"  Found {len(sku_ean_pairs)} SKU-EAN pairs to search for on {supplier_name}")
+
+                        # Authenticate first
+                        if not supplier.authenticate():
+                            raise Exception(f"Failed to authenticate with {supplier_name}")
+
+                        # Search for products by SKU-EAN pairs
+                        supplier_products = supplier.search_products_by_sku_list(sku_ean_pairs)
                     else:
                         # Regular API-based suppliers
                         supplier_products = supplier.get_products()

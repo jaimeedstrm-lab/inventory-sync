@@ -5,6 +5,7 @@
       "type": "api",
       "env_prefix": "OASE",
       "enabled": true,
+      "shopify_tag": "supplier:oase",
       "config": {
         "base_url": "https://api.oase-outdoors.com",
         "username": "your_username",
@@ -14,21 +15,42 @@
       }
     },
     {
-      "name": "supplier_1",
+      "name": "order_nordic",
       "type": "scraper",
-      "env_prefix": "SUPPLIER1",
+      "env_prefix": "ORDER_NORDIC",
       "enabled": false,
+      "shopify_tag": "supplier:order_nordic",
       "config": {
-        "login_url": "https://supplier1.com/login",
-        "inventory_url": "https://supplier1.com/inventory",
+        "base_url": "https://www.order-nordic.com",
+        "login_url": "https://www.order-nordic.com/my-account/",
         "username": "your_username",
-        "password": "your_password",
-        "selectors": {
-          "username_field": "#username",
-          "password_field": "#password",
-          "submit_button": "button[type='submit']",
-          "inventory_table": "table.inventory"
-        }
+        "password": "your_password"
+      }
+    },
+    {
+      "name": "response_nordic",
+      "type": "scraper",
+      "env_prefix": "RESPONSE_NORDIC",
+      "enabled": false,
+      "shopify_tag": "supplier:response_nordic",
+      "config": {
+        "base_url": "https://www.responsenordic.com",
+        "login_url": "https://www.responsenordic.com/webshop/login/",
+        "username": "your_username",
+        "password": "your_password"
+      }
+    },
+    {
+      "name": "petcare",
+      "type": "scraper",
+      "env_prefix": "PETCARE",
+      "enabled": false,
+      "shopify_tag": "supplier:petcare",
+      "config": {
+        "base_url": "https://www.petcare.se",
+        "login_url": "https://www.petcare.se/mitt-konto/",
+        "username": "your_username",
+        "password": "your_password"
       }
     }
   ],
@@ -41,6 +63,7 @@
     "låg lagernivå": 3,
     "out of stock": 0,
     "ikke på lager": 0,
+    "ej i lager": 0,
     "slut i lager": 0,
     "restordre": 0,
     "backorder": 0
