@@ -150,13 +150,18 @@ jobs:
       env:
         SUPPLIERS_JSON: ${{ secrets.SUPPLIERS_JSON }}
         SHOPIFY_JSON: ${{ secrets.SHOPIFY_JSON }}
+        PETCARE_COOKIES: ${{ secrets.PETCARE_COOKIES }}
       run: |
         mkdir -p config
+        mkdir -p cookies
         if [ -n "$SUPPLIERS_JSON" ]; then
           printf '%s' "$SUPPLIERS_JSON" > config/suppliers.json
         fi
         if [ -n "$SHOPIFY_JSON" ]; then
           printf '%s' "$SHOPIFY_JSON" > config/shopify.json
+        fi
+        if [ -n "$PETCARE_COOKIES" ]; then
+          printf '%s' "$PETCARE_COOKIES" > cookies/petcare_cookies.json
         fi
 
     - name: Run Petcare sync
