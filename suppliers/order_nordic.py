@@ -180,9 +180,9 @@ class OrderNordicSupplier(BaseSupplier):
             # Submit search
             search_box.press("Enter")
 
-            # Wait for search results or product page
-            self.page.wait_for_load_state("networkidle", timeout=10000)
-            self.page.wait_for_timeout(1000)  # Extra wait for dynamic content
+            # Wait for search results or product page (reduced timeout for performance)
+            self.page.wait_for_load_state("domcontentloaded", timeout=5000)
+            self.page.wait_for_timeout(500)  # Reduced wait for dynamic content
 
             # Check if we landed on a product page directly or search results
             # Look for EAN verification on product page
@@ -211,8 +211,8 @@ class OrderNordicSupplier(BaseSupplier):
 
                     # Click the product
                     first_result.click()
-                    self.page.wait_for_load_state("networkidle", timeout=10000)
-                    self.page.wait_for_timeout(1000)
+                    self.page.wait_for_load_state("domcontentloaded", timeout=5000)
+                    self.page.wait_for_timeout(500)
 
                     # Verify we're on a product page (don't need to verify EAN yet)
                 except:
@@ -356,7 +356,7 @@ class OrderNordicSupplier(BaseSupplier):
 
             # Small delay to avoid overwhelming the server
             if i < total:
-                self.page.wait_for_timeout(500)  # 500ms delay between searches
+                self.page.wait_for_timeout(100)  # Reduced to 100ms delay between searches
 
         return products
 

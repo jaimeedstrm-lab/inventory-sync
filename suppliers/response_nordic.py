@@ -171,20 +171,20 @@ class ResponseNordicSupplier(BaseSupplier):
                 pass
 
             # Type character by character to trigger instant search
-            # Slower typing to ensure instant search triggers properly
-            search_box.type(ean, delay=200)
+            # Optimized typing delay for performance
+            search_box.type(ean, delay=100)
             print(f"  Typed EAN: {ean}")
 
-            # Wait even longer for instant search results popup to appear
+            # Wait for instant search results popup to appear
             print(f"  Waiting for instant search results...")
-            self.page.wait_for_timeout(5000)  # Increased to 5 seconds
+            self.page.wait_for_timeout(2000)  # Reduced to 2 seconds for performance
 
             # Look for product link in instant search popup
             product_link = self.page.locator('a.NoUnderLine[data-bind*="ProduktLink"]').first
 
             try:
-                # Wait for the link to be visible with much longer timeout
-                product_link.wait_for(state="visible", timeout=10000)  # Increased to 10 seconds
+                # Wait for the link to be visible
+                product_link.wait_for(state="visible", timeout=5000)  # Reduced to 5 seconds for performance
                 print(f"  ✓ Found product in instant search preview")
 
                 # Click the first/only product link
@@ -192,8 +192,8 @@ class ResponseNordicSupplier(BaseSupplier):
                 print(f"  Clicked on product link")
 
                 # Wait for product page to load
-                self.page.wait_for_load_state("domcontentloaded", timeout=15000)
-                self.page.wait_for_timeout(1500)
+                self.page.wait_for_load_state("domcontentloaded", timeout=8000)
+                self.page.wait_for_timeout(800)
                 print(f"  Product page loaded: {self.page.url}")
 
             except PlaywrightTimeout:
@@ -350,7 +350,7 @@ class ResponseNordicSupplier(BaseSupplier):
 
             # Small delay to avoid overwhelming the server
             if i < total:
-                self.page.wait_for_timeout(500)  # 500ms delay between searches
+                self.page.wait_for_timeout(100)  # Reduced to 100ms delay between searches
 
         return products
 
