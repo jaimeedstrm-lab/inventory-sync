@@ -102,6 +102,16 @@ def refresh_petcare_cookies():
         print(f"   ✓ Cookies saved to {cookie_file}")
         print(f"   ✓ Total cookies: {len(cookies)}")
 
+        # Copy to clipboard
+        try:
+            import subprocess
+            with open(cookie_file, 'r') as f:
+                cookie_content = f.read()
+            subprocess.run(['pbcopy'], input=cookie_content.encode('utf-8'), check=True)
+            print(f"   ✓ Cookies copied to clipboard!")
+        except Exception as e:
+            print(f"   ⚠️  Could not copy to clipboard: {e}")
+
         # Show important cookies
         print("\n📋 Important cookies saved:")
         for cookie in cookies:
@@ -116,11 +126,11 @@ def refresh_petcare_cookies():
 
         print("\n✅ Done! You can now close the browser.")
         print("\n📝 Next steps:")
-        print("   1. Copy the contents of cookies/petcare_cookies.json")
+        print("   1. Cookies are already in your clipboard! (Cmd+V to paste)")
         print("   2. Update the PETCARE_COOKIES secret in GitHub:")
         print("      - Go to: https://github.com/jaimeedstrm-lab/inventory-sync/settings/secrets/actions")
         print("      - Edit PETCARE_COOKIES secret")
-        print("      - Paste the new cookie content")
+        print("      - Paste (Cmd+V) the new cookie content")
 
         # Wait a bit before closing
         time.sleep(3)
