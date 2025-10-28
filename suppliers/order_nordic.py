@@ -180,9 +180,9 @@ class OrderNordicSupplier(BaseSupplier):
             # Submit search
             search_box.press("Enter")
 
-            # Wait for search results or product page (reduced timeout for performance)
-            self.page.wait_for_load_state("domcontentloaded", timeout=5000)
-            self.page.wait_for_timeout(500)  # Reduced wait for dynamic content
+            # Wait for search results or product page (optimized for performance)
+            self.page.wait_for_load_state("domcontentloaded", timeout=8000)
+            self.page.wait_for_timeout(1000)  # Wait for dynamic content to load
 
             # Check if we landed on a product page directly or search results
             # Look for EAN verification on product page
@@ -199,11 +199,11 @@ class OrderNordicSupplier(BaseSupplier):
                     # Try product image link first
                     try:
                         first_result = self.page.locator('a.image.cd-item').first
-                        first_result.wait_for(state="visible", timeout=2000)
+                        first_result.wait_for(state="visible", timeout=3000)
                     except:
                         # Try product name link
                         first_result = self.page.locator('h2.product-name a').first
-                        first_result.wait_for(state="visible", timeout=2000)
+                        first_result.wait_for(state="visible", timeout=3000)
 
                     if not first_result:
                         # No results found
@@ -211,8 +211,8 @@ class OrderNordicSupplier(BaseSupplier):
 
                     # Click the product
                     first_result.click()
-                    self.page.wait_for_load_state("domcontentloaded", timeout=5000)
-                    self.page.wait_for_timeout(500)
+                    self.page.wait_for_load_state("domcontentloaded", timeout=8000)
+                    self.page.wait_for_timeout(800)
 
                     # Verify we're on a product page (don't need to verify EAN yet)
                 except:
