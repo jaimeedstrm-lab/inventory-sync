@@ -463,6 +463,33 @@ inventory-sync/
 - ✅ For Gmail: use App Passwords, not account password
 - ✅ Restrict Railway environment variables to production only
 
+## Maintenance
+
+### Updating Petcare Cookies
+
+Petcare uses reCAPTCHA which cannot be solved in headless mode (GitHub Actions). Cookies need to be refreshed every 2-3 months when they expire.
+
+**Quick Update (2 minutes):**
+
+```bash
+cd /path/to/inventory-sync-current
+
+# Option 1: Automatic (with GitHub CLI)
+./update_petcare_cookies_to_github.sh
+
+# Option 2: Manual
+python3 refresh_petcare_cookies.py
+# Then update GitHub Secret at:
+# https://github.com/jaimeedstrm-lab/inventory-sync/settings/secrets/actions
+```
+
+**When to update:**
+- GitHub Actions fails with "Authentication failed" or "reCAPTCHA detected"
+- Typically every 2-3 months
+- Set a calendar reminder!
+
+**Detailed guide:** See [UPDATE_COOKIES_GUIDE.md](UPDATE_COOKIES_GUIDE.md)
+
 ## Support
 
 For issues or questions:
