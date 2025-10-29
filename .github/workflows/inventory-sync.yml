@@ -50,21 +50,17 @@ jobs:
   sync-order-nordic:
     name: Sync Order Nordic
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        playwright install chromium
-        playwright install-deps chromium
 
     - name: Prepare configuration files
       env:
@@ -90,21 +86,17 @@ jobs:
   sync-response-nordic:
     name: Sync Response Nordic
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        playwright install chromium
-        playwright install-deps chromium
 
     - name: Prepare configuration files
       env:
@@ -130,21 +122,17 @@ jobs:
   sync-petcare:
     name: Sync Petcare
     runs-on: ubuntu-latest
+    timeout-minutes: 180
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        playwright install chromium
-        playwright install-deps chromium
 
     - name: Prepare configuration files
       env:
