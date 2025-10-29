@@ -426,31 +426,53 @@ class PetcareSupplier(BaseSupplier):
                 if suggestion.is_visible(timeout=3000):
                     print(f"  ✓ Found product in suggestions with SKU: {sku}")
 
-                    # Click on the product link to go to product page
-                    # The link is typically <a class="wd-fill" href="...">
-                    # Try to find it near the suggestion
+                    # Find the product link - it should be in the same list item
+                    # Structure: <li> contains both the SKU <p> and product link <a>
                     suggestion_link = None
 
                     try:
-                        # Try finding the wd-fill link in the same container
-                        suggestion_link = suggestion.locator('xpath=ancestor::*').locator('a.wd-fill').first
-                        print(f"  [DEBUG] Found link with wd-fill class")
-                    except:
-                        try:
-                            # Fallback to any ancestor link
-                            suggestion_link = suggestion.locator('xpath=ancestor::a').first
-                            print(f"  [DEBUG] Found ancestor link")
-                        except:
-                            print(f"  [DEBUG] Could not find link, will try clicking suggestion directly")
+                        # Try to find product link in same parent container
+                        # Look for link that goes to /produkt/ or has the product in URL
+                        parent = suggestion.locator('xpath=ancestor::li').first
+
+                        # Try to find a link within the parent that's NOT a category link
+                        all_links = parent.locator('a').all()
+
+                        for link in all_links:
+                            href = link.get_attribute('href')
+                            # Skip category links (like /hund/, /katt/, etc)
+                            # Product links typically have longer paths or contain product names
+                            if href and ('produkt' in href or href.count('/') > 2):
+                                suggestion_link = link
+                                print(f"  [DEBUG] Found product link: {href}")
+                                break
+
+                        # If no product link found, try the first link that's not just a category
+                        if not suggestion_link and all_links:
+                            for link in all_links:
+                                href = link.get_attribute('href')
+                                # Avoid simple category URLs like /hund/, /katt/
+                                if href and len(href) > 10:
+                                    suggestion_link = link
+                                    print(f"  [DEBUG] Using fallback link: {href}")
+                                    break
+                    except Exception as e:
+                        print(f"  [DEBUG] Error finding product link: {e}")
 
                     if suggestion_link:
                         href = suggestion_link.get_attribute('href')
+
+                        # Validate it's not a category link
+                        if href and href.rstrip('/').count('/') <= 1:
+                            print(f"  [WARNING] Link appears to be category page: {href}, skipping...")
+                            return None
+
                         print(f"  Navigating to product: {href}")
                         suggestion_link.click()
                     else:
-                        # Last resort: click the suggestion itself
-                        print(f"  Clicking suggestion element directly")
-                        suggestion.click()
+                        # Could not find proper link
+                        print(f"  [DEBUG] Could not find valid product link, skipping...")
+                        return None
 
                     # Wait for product page to load
                     self.page.wait_for_load_state("domcontentloaded", timeout=15000)
