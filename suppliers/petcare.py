@@ -311,6 +311,15 @@ class PetcareSupplier(BaseSupplier):
             print(f"  [DEBUG] Starting product search...")
             print(f"  [DEBUG] Current URL: {self.page.url}")
 
+            # Reset to homepage to ensure clean state for search
+            if not self.page.url.endswith(self.base_url) and "post_type=product" not in self.page.url:
+                print(f"  [DEBUG] Navigating back to homepage for clean search state...")
+                try:
+                    self.page.goto(self.base_url, timeout=15000, wait_until="domcontentloaded")
+                    self.page.wait_for_timeout(1000)
+                except Exception as e:
+                    print(f"  [DEBUG] Warning: Could not navigate to homepage: {e}")
+
             # Click search icon to open search field
             # <span class="wd-tools-icon"> with search icon
             print(f"  Clicking search icon to reveal search field...")
@@ -367,7 +376,9 @@ class PetcareSupplier(BaseSupplier):
 
             if not search_box:
                 print(f"  [DEBUG] Could not find search box with any known selector")
-                raise Exception("Could not find search box with any known selector")
+                print(f"  [DEBUG] This may indicate the page has changed or search is not available")
+                print(f"  [DEBUG] Skipping SKU: {sku}")
+                return None  # Return None instead of raising exception to continue with other products
 
             # Clear and type the SKU
             search_box.click()
@@ -622,6 +633,15 @@ class PetcareSupplier(BaseSupplier):
         for i, (sku, ean) in enumerate(sku_ean_pairs, 1):
             if i % 10 == 0 or i == total:
                 print(f"  Progress: {i}/{total} products searched...")
+
+            # Refresh homepage every 50 products to prevent page state issues
+            if i % 50 == 0:
+                print(f"  [DEBUG] Refreshing page state after {i} products...")
+                try:
+                    self.page.goto(self.base_url, timeout=15000, wait_until="domcontentloaded")
+                    self.page.wait_for_timeout(2000)
+                except Exception as e:
+                    print(f"  [DEBUG] Warning: Could not refresh page: {e}")
 
             product = self.search_product_by_sku(sku, ean)
 
