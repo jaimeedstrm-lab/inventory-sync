@@ -49,7 +49,8 @@ def sync_inventory(
     supplier_filter: Optional[str] = None,
     dry_run: bool = False,
     force: bool = False,
-    test_limit: Optional[int] = None
+    test_limit: Optional[int] = None,
+    test_eans: Optional[list] = None
 ):
     """Run inventory synchronization.
 
@@ -58,6 +59,7 @@ def sync_inventory(
         dry_run: If True, don't update inventory, just preview
         force: If True, bypass safety checks
         test_limit: Limit number of products to sync (for testing)
+        test_eans: Specific EANs to test (overrides test_limit)
     """
     # Load configuration
     print("Loading configuration...")
@@ -187,8 +189,12 @@ def sync_inventory(
                                 if ean:
                                     ean_list.append(ean)
 
-                        # Limit for testing if specified
-                        if test_limit:
+                        # Use specific test EANs if provided, otherwise limit by count
+                        if test_eans:
+                            # Filter to only test the specified EANs
+                            ean_list = [ean for ean in ean_list if ean in test_eans]
+                            print(f"  [TEST MODE] Using {len(ean_list)} specific test EANs")
+                        elif test_limit:
                             ean_list = ean_list[:test_limit]
                             print(f"  [TEST MODE] Limiting to {len(ean_list)} EANs")
 
@@ -444,13 +450,25 @@ Examples:
         help="Limit number of products to test (for quick verification)"
     )
 
+    parser.add_argument(
+        "--test-eans",
+        type=str,
+        help="Comma-separated list of specific EANs to test"
+    )
+
     args = parser.parse_args()
+
+    # Parse test EANs if provided
+    test_eans = None
+    if args.test_eans:
+        test_eans = [ean.strip() for ean in args.test_eans.split(',')]
 
     sync_inventory(
         supplier_filter=args.supplier,
         dry_run=args.dry_run,
         force=args.force,
-        test_limit=args.test_limit
+        test_limit=args.test_limit,
+        test_eans=test_eans
     )
 
 
