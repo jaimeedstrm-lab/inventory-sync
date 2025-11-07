@@ -206,6 +206,24 @@ def sync_inventory(
 
                         # Search for products by EAN list
                         supplier_products = supplier.search_products_by_ean_list(ean_list)
+
+                        # Add products not found on supplier with quantity 0
+                        # This ensures products that no longer exist on supplier are marked as out of stock
+                        found_eans = {p.get("ean") for p in supplier_products if p.get("ean")}
+                        not_found_eans = set(ean_list) - found_eans
+
+                        for ean in not_found_eans:
+                            supplier_products.append({
+                                "ean": ean,
+                                "quantity": 0,
+                                "title": f"Product not found on {supplier_name}",
+                                "sku": None,
+                                "status": "not_found_on_supplier"
+                            })
+
+                        print(f"  Products found on supplier: {len(found_eans)}")
+                        print(f"  Products NOT found (will be set to 0): {len(not_found_eans)}")
+
                     elif supplier_name == "petcare":
                         # Special handling for Petcare (SKU search-based with EAN verification)
                         # Extract SKU-EAN pairs from Shopify products
@@ -229,6 +247,26 @@ def sync_inventory(
 
                         # Search for products by SKU-EAN pairs
                         supplier_products = supplier.search_products_by_sku_list(sku_ean_pairs)
+
+                        # Add products not found on supplier with quantity 0
+                        found_eans = {p.get("ean") for p in supplier_products if p.get("ean")}
+                        searched_eans = {ean for sku, ean in sku_ean_pairs if ean}
+
+                        not_found_eans = searched_eans - found_eans
+
+                        for sku, ean in sku_ean_pairs:
+                            if ean in not_found_eans:
+                                supplier_products.append({
+                                    "ean": ean,
+                                    "sku": sku,
+                                    "quantity": 0,
+                                    "title": f"Product not found on {supplier_name}",
+                                    "status": "not_found_on_supplier"
+                                })
+
+                        print(f"  Products found on supplier: {len(found_eans)}")
+                        print(f"  Products NOT found (will be set to 0): {len(not_found_eans)}")
+
                     else:
                         # Regular API-based suppliers
                         supplier_products = supplier.get_products()
