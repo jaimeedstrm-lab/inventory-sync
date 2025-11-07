@@ -48,7 +48,8 @@ def get_supplier_instance(supplier_config: dict, status_mapping: dict):
 def sync_inventory(
     supplier_filter: Optional[str] = None,
     dry_run: bool = False,
-    force: bool = False
+    force: bool = False,
+    test_limit: Optional[int] = None
 ):
     """Run inventory synchronization.
 
@@ -56,6 +57,7 @@ def sync_inventory(
         supplier_filter: Only sync this supplier (optional)
         dry_run: If True, don't update inventory, just preview
         force: If True, bypass safety checks
+        test_limit: Limit number of products to sync (for testing)
     """
     # Load configuration
     print("Loading configuration...")
@@ -185,6 +187,11 @@ def sync_inventory(
                                 if ean:
                                     ean_list.append(ean)
 
+                        # Limit for testing if specified
+                        if test_limit:
+                            ean_list = ean_list[:test_limit]
+                            print(f"  [TEST MODE] Limiting to {len(ean_list)} EANs")
+
                         print(f"  Found {len(ean_list)} EANs to search for on {supplier_name}")
 
                         # Authenticate first
@@ -202,6 +209,11 @@ def sync_inventory(
                             ean = variant.get("barcode")
                             if sku:  # SKU is required for Petcare search
                                 sku_ean_pairs.append((sku, ean))
+
+                        # Limit for testing if specified
+                        if test_limit:
+                            sku_ean_pairs = sku_ean_pairs[:test_limit]
+                            print(f"  [TEST MODE] Limiting to {len(sku_ean_pairs)} SKU-EAN pairs")
 
                         print(f"  Found {len(sku_ean_pairs)} SKU-EAN pairs to search for on {supplier_name}")
 
@@ -426,12 +438,19 @@ Examples:
         help="Bypass safety checks (use with caution!)"
     )
 
+    parser.add_argument(
+        "--test-limit",
+        type=int,
+        help="Limit number of products to test (for quick verification)"
+    )
+
     args = parser.parse_args()
 
     sync_inventory(
         supplier_filter=args.supplier,
         dry_run=args.dry_run,
-        force=args.force
+        force=args.force,
+        test_limit=args.test_limit
     )
 
 
