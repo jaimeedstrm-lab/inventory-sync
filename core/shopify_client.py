@@ -3,6 +3,7 @@ import time
 import requests
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from utils.helpers import safe_int
 
 
 class ShopifyClient:
@@ -226,7 +227,7 @@ class ShopifyClient:
                     "title": f"{product['title']} - {variant['title']}",
                     "product_title": product.get("title"),
                     "variant_title": variant.get("title"),
-                    "inventory_quantity": variant.get("inventory_quantity", 0)
+                    "inventory_quantity": safe_int(variant.get("inventory_quantity"), default=0)
                 }
 
                 # Map by EAN/barcode

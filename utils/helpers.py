@@ -1,6 +1,51 @@
 """Helper functions for inventory sync system."""
 import re
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, Any
+
+
+def safe_int(value: Any, default: int = 0) -> int:
+    """Safely convert any value to integer.
+
+    Args:
+        value: Value to convert (can be int, float, str, or None)
+        default: Default value if conversion fails
+
+    Returns:
+        Integer value
+
+    Examples:
+        >>> safe_int(5)
+        5
+        >>> safe_int(5.0)
+        5
+        >>> safe_int("5")
+        5
+        >>> safe_int("5.0")
+        5
+        >>> safe_int("2.0")
+        2
+        >>> safe_int(None, default=0)
+        0
+        >>> safe_int("invalid", default=0)
+        0
+    """
+    if value is None:
+        return default
+
+    try:
+        # Handle numeric types
+        if isinstance(value, (int, float)):
+            return int(value)
+
+        # Handle string types
+        if isinstance(value, str):
+            # Try to convert via float first to handle "2.0" strings
+            return int(float(value.strip()))
+
+        # Unknown type - try direct conversion
+        return int(value)
+    except (ValueError, TypeError, AttributeError):
+        return default
 
 
 def normalize_status(
