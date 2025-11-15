@@ -232,11 +232,13 @@ def sync_inventory(
                         # Special handling for Petcare (SKU search-based with EAN verification)
                         # Extract SKU-EAN pairs from Shopify products
                         sku_ean_pairs = []
+                        seen_skus = set()  # Track SKUs to avoid duplicates
                         for key, variant in shopify_variants.items():
                             sku = variant.get("sku")
                             ean = variant.get("barcode")
-                            if sku:  # SKU is required for Petcare search
+                            if sku and sku not in seen_skus:  # SKU is required and must be unique
                                 sku_ean_pairs.append((sku, ean))
+                                seen_skus.add(sku)
 
                         # Limit for testing if specified
                         if test_limit:
