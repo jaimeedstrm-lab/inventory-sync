@@ -224,6 +224,10 @@ def sync_inventory(
                         print(f"  Products found on supplier: {len(found_eans)}")
                         print(f"  Products NOT found (will be set to 0): {len(not_found_eans)}")
 
+                        # Safety check: If NO products found at all, something is wrong - abort sync
+                        if len(found_eans) == 0 and len(ean_list) > 0:
+                            raise Exception(f"SAFETY CHECK FAILED: Found 0 products out of {len(ean_list)} searched. This indicates a scraping/auth failure, not real stock levels. Aborting sync to prevent setting everything to 0.")
+
                     elif supplier_name == "petcare":
                         # Special handling for Petcare (SKU search-based with EAN verification)
                         # Extract SKU-EAN pairs from Shopify products
@@ -266,6 +270,10 @@ def sync_inventory(
 
                         print(f"  Products found on supplier: {len(found_eans)}")
                         print(f"  Products NOT found (will be set to 0): {len(not_found_eans)}")
+
+                        # Safety check: If NO products found at all, something is wrong - abort sync
+                        if len(found_eans) == 0 and len(sku_ean_pairs) > 0:
+                            raise Exception(f"SAFETY CHECK FAILED: Found 0 products out of {len(sku_ean_pairs)} searched. This indicates a scraping/auth failure, not real stock levels. Aborting sync to prevent setting everything to 0.")
 
                     else:
                         # Regular API-based suppliers
