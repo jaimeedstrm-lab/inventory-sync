@@ -431,33 +431,19 @@ class PetcareSupplier(BaseSupplier):
                     suggestion_link = None
 
                     try:
-                        # Try to find product link in same parent container
-                        # Look for link that goes to /produkt/ or has the product in URL
-                        parent = suggestion.locator('xpath=ancestor::li').first
+                        # Go up to parent .wd-suggestion div (2 levels up from the <p> element)
+                        # Structure: <div class="wd-suggestion"><div class="wd-suggestion-content"><p class="wd-suggestion-sku">
+                        parent = suggestion.locator('xpath=../..').first
 
-                        # Try to find a link within the parent that's NOT a category link
-                        all_links = parent.locator('a').all()
+                        # Find the wd-fill link in this parent
+                        suggestion_link = parent.locator('a.wd-fill').first
 
-                        for link in all_links:
-                            href = link.get_attribute('href')
-                            # Skip category links (like /hund/, /katt/, etc)
-                            # Product links typically have longer paths or contain product names
-                            if href and ('produkt' in href or href.count('/') > 2):
-                                suggestion_link = link
-                                print(f"  [DEBUG] Found product link: {href}")
-                                break
+                        href = suggestion_link.get_attribute('href')
+                        print(f"  ✓ Found product link: {href}")
 
-                        # If no product link found, try the first link that's not just a category
-                        if not suggestion_link and all_links:
-                            for link in all_links:
-                                href = link.get_attribute('href')
-                                # Avoid simple category URLs like /hund/, /katt/
-                                if href and len(href) > 10:
-                                    suggestion_link = link
-                                    print(f"  [DEBUG] Using fallback link: {href}")
-                                    break
                     except Exception as e:
-                        print(f"  [DEBUG] Error finding product link: {e}")
+                        print(f"  ✗ Error finding product link: {e}")
+                        suggestion_link = None
 
                     if suggestion_link:
                         href = suggestion_link.get_attribute('href')
