@@ -24,7 +24,7 @@ class ShopifyClient:
 
         # Rate limiting configuration
         self.requests_per_second = 2  # Shopify Basic plan limit
-        self.max_retries = 3
+        self.max_retries = 10  # Increased for rate limiting scenarios
         self.retry_delay = 2  # seconds
         self.last_request_time = 0
 
@@ -69,23 +69,32 @@ class ShopifyClient:
             try:
                 self._wait_for_rate_limit()
 
-                response = requests.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                    params=params,
-                    timeout=30
-                )
+                # Separate loop for handling rate limiting (don't count as retries)
+                max_rate_limit_attempts = 20  # Allow up to 20 rate limit waits
+                for rate_limit_attempt in range(max_rate_limit_attempts):
+                    response = requests.request(
+                        method=method,
+                        url=url,
+                        headers=headers,
+                        json=data,
+                        params=params,
+                        timeout=30
+                    )
 
-                # Handle rate limiting (429 Too Many Requests)
-                if response.status_code == 429:
-                    retry_after = safe_int(response.headers.get('Retry-After', self.retry_delay), default=self.retry_delay)
-                    print(f"Rate limited. Waiting {retry_after} seconds...")
-                    time.sleep(retry_after)
-                    continue
+                    # Handle rate limiting (429 Too Many Requests)
+                    if response.status_code == 429:
+                        retry_after = safe_int(response.headers.get('Retry-After', self.retry_delay), default=self.retry_delay)
+                        print(f"Rate limited. Waiting {retry_after} seconds...")
+                        time.sleep(retry_after)
+                        continue  # Try again without counting as failed attempt
 
-                # Raise exception for HTTP errors
+                    # Success or other error - break out of rate limit loop
+                    break
+                else:
+                    # Exhausted rate limit attempts
+                    raise requests.exceptions.RequestException(f"Rate limited too many times ({max_rate_limit_attempts} attempts)")
+
+                # Raise exception for other HTTP errors (but not 429 since we handled it above)
                 response.raise_for_status()
 
                 return response.json() if response.content else {}
