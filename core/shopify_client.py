@@ -80,7 +80,7 @@ class ShopifyClient:
 
                 # Handle rate limiting (429 Too Many Requests)
                 if response.status_code == 429:
-                    retry_after = int(response.headers.get('Retry-After', self.retry_delay))
+                    retry_after = safe_int(response.headers.get('Retry-After', self.retry_delay), default=self.retry_delay)
                     print(f"Rate limited. Waiting {retry_after} seconds...")
                     time.sleep(retry_after)
                     continue
@@ -262,10 +262,11 @@ class ShopifyClient:
         Note:
             Uses the inventory_levels/set.json endpoint
         """
+        # Ensure all values are proper integers (handle edge cases where they might be strings/floats)
         data = {
-            "inventory_item_id": inventory_item_id,
-            "location_id": location_id,
-            "available": available
+            "inventory_item_id": safe_int(inventory_item_id),
+            "location_id": safe_int(location_id),
+            "available": safe_int(available)
         }
 
         return self._make_request("POST", "inventory_levels/set.json", data=data)
