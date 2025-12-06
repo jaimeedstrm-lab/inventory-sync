@@ -278,8 +278,38 @@ def sync_inventory(
                             raise Exception(f"SAFETY CHECK FAILED: Found 0 products out of {len(sku_ean_pairs)} searched. This indicates a scraping/auth failure, not real stock levels. Aborting sync to prevent setting everything to 0.")
 
                     else:
-                        # Regular API-based suppliers
+                        # Regular API-based suppliers (e.g., Oase)
                         supplier_products = supplier.get_products()
+
+                        # Add products not found on supplier with quantity 0
+                        # This ensures products in Shopify that no longer exist on supplier are marked as out of stock
+                        found_eans = {p.get("ean") for p in supplier_products if p.get("ean")}
+
+                        # Get all EANs that should be tracked for this supplier
+                        shopify_eans = set()
+                        for key, variant in shopify_variants.items():
+                            if key.startswith("EAN:"):
+                                ean = variant.get("barcode")
+                                if ean:
+                                    shopify_eans.add(ean)
+
+                        not_found_eans = shopify_eans - found_eans
+
+                        for ean in not_found_eans:
+                            supplier_products.append({
+                                "ean": ean,
+                                "quantity": 0,
+                                "title": f"Product not found on {supplier_name}",
+                                "sku": None,
+                                "status": "not_found_on_supplier"
+                            })
+
+                        print(f"  Products found on supplier: {len(found_eans)}")
+                        print(f"  Products NOT found (will be set to 0): {len(not_found_eans)}")
+
+                        # Safety check: If NO products found at all, something is wrong - abort sync
+                        if len(found_eans) == 0 and len(shopify_eans) > 0:
+                            raise Exception(f"SAFETY CHECK FAILED: Found 0 products out of {len(shopify_eans)} searched. This indicates an API/scraping failure, not real stock levels. Aborting sync to prevent setting everything to 0.")
 
                 logger.increment_supplier_products(len(supplier_products))
 
