@@ -313,9 +313,49 @@ def sync_inventory(
 
                 logger.increment_supplier_products(len(supplier_products))
 
+                # Count all Shopify products with LOCAL_STOCK tag
+                # These will be protected from updates from ANY supplier (not just the tagged supplier)
+                local_stock_protected_count = 0
+
+                for variant in matcher.shopify_variants.values():
+                    product_tags = variant.get("product_tags", "")
+                    tags_list = [tag.strip() for tag in product_tags.split(",")]
+                    # Count all products with LOCAL_STOCK tag (protects from all suppliers)
+                    if "LOCAL_STOCK" in tags_list:
+                        local_stock_protected_count += 1
+
+                # Filter out products that should not be updated (LOCAL_STOCK)
+                # This prevents them from being marked as "not_found" and being updated
+                local_stock_skipped = []
+                filtered_supplier_products = []
+
+                for product in supplier_products:
+                    ean = product.get("ean")
+                    sku = product.get("sku")
+
+                    # Try to find this product in Shopify
+                    shopify_variant = None
+                    if ean:
+                        shopify_variant = matcher.shopify_variants.get(f"EAN:{ean}")
+                    if not shopify_variant and sku:
+                        shopify_variant = matcher.shopify_variants.get(f"SKU:{sku}")
+
+                    # Check if it has LOCAL_STOCK tag
+                    if shopify_variant:
+                        product_tags = shopify_variant.get("product_tags", "")
+                        tags_list = [tag.strip() for tag in product_tags.split(",")]
+                        if "LOCAL_STOCK" in tags_list:
+                            local_stock_skipped.append({
+                                "supplier_product": product,
+                                "shopify_variant": shopify_variant
+                            })
+                            continue
+
+                    filtered_supplier_products.append(product)
+
                 # Match products
                 print(f"Matching products with Shopify catalog...")
-                match_results = matcher.match_products_batch(supplier_products)
+                match_results = matcher.match_products_batch(filtered_supplier_products)
 
                 matched = match_results["matched"]
                 not_found = match_results["not_found"]
@@ -324,6 +364,8 @@ def sync_inventory(
                 print(f"✓ Matched: {len(matched)}")
                 print(f"  Not found in Shopify: {len(not_found)}")
                 print(f"  Duplicates: {len(match_duplicates)}")
+                if local_stock_protected_count > 0:
+                    print(f"  Protected (LOCAL_STOCK tag): {local_stock_protected_count} products will not be updated")
 
                 logger.increment_matched_products(len(matched))
 

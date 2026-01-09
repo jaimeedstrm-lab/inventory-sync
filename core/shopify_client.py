@@ -225,6 +225,7 @@ class ShopifyClient:
         primary_location_id = self.get_primary_location_id()
 
         for product in products:
+            product_tags = product.get("tags", "")
             for variant in product.get("variants", []):
                 variant_data = {
                     "product_id": product["id"],
@@ -236,7 +237,8 @@ class ShopifyClient:
                     "title": f"{product['title']} - {variant['title']}",
                     "product_title": product.get("title"),
                     "variant_title": variant.get("title"),
-                    "inventory_quantity": safe_int(variant.get("inventory_quantity"), default=0)
+                    "inventory_quantity": safe_int(variant.get("inventory_quantity"), default=0),
+                    "product_tags": product_tags
                 }
 
                 # Map by EAN/barcode
