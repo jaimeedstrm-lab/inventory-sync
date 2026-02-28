@@ -21,9 +21,9 @@ class OaseOutdoorsSupplier(BaseSupplier):
         """
         super().__init__(name, config, status_mapping)
 
-        self.portal_url = config.get("portal_url", "https://www.oase-outdoors.dk/en-gb/dealernet")
-        self.api_url = config.get("api_url", "https://www.oase-outdoors.dk/apiv2/common/shopping/items/en-GB/dealernet-order")
-        self.login_url = config.get("login_url", "https://www.oase-outdoors.dk/Admin/Public/ExtranetLogOnMasterPage.aspx")
+        self.base_url = config.get("base_url", "https://dealernet.oase-outdoors.dk")
+        self.portal_url = config.get("portal_url", "https://dealernet.oase-outdoors.dk/en-gb/login")
+        self.api_url = config.get("api_url", "https://dealernet.oase-outdoors.dk/api/dealernet/order/items/en-GB/dealernet-order")
         self.username = config.get("username")
         self.password = config.get("password")
 
@@ -42,21 +42,25 @@ class OaseOutdoorsSupplier(BaseSupplier):
             Exception: If authentication fails
         """
         try:
-            # Step 1: Get the portal page to establish session and get cookies
+            # Step 1: Get the login page to establish session and get cookies
             print(f"  Accessing dealer portal...")
             response = self.session.get(self.portal_url, timeout=30)
 
             if response.status_code != 200:
                 raise Exception(f"Failed to access portal: HTTP {response.status_code}")
 
-            # Step 2: Submit login form to the dealernet page itself
+            # Step 2: Submit login form
             print(f"  Submitting login form...")
 
-            # The form on the dealernet page uses these fields
             login_data = {
+                "ID": "5827",
+                "DWExtranetUsernameRemember": "True",
+                "DWExtranetPasswordRemember": "True",
+                "GoBackToPage": "",
+                "LoginAction": "Login",
+                "redirect": "/en-gb/home",
                 "username": self.username,
                 "password": self.password,
-                "ForgotPassword": "False"
             }
 
             response = self.session.post(
@@ -69,39 +73,26 @@ class OaseOutdoorsSupplier(BaseSupplier):
             if response.status_code != 200:
                 raise Exception(f"Login POST failed: HTTP {response.status_code}")
 
-            # Step 3: Check if login was successful by looking for logout or user indicator
+            # Step 3: Verify login by checking for the Dynamicweb.Extranet session cookie
             print(f"  Verifying login...")
-            if "logout" in response.text.lower() or "log out" in response.text.lower():
-                print(f"  ✓ Login successful (found logout link)")
+            if "Dynamicweb.Extranet" in self.session.cookies:
+                print(f"  ✓ Login successful")
             else:
-                # Try to verify by attempting API access
-                print(f"  Checking API access...")
+                raise Exception("Login verification failed - session cookie not set after login")
 
-            # Step 4: Verify we can access the API
-            test_response = self.session.get(
-                self.api_url,
-                timeout=30
-            )
+            # Step 4: Verify API access
+            test_response = self.session.get(self.api_url, timeout=30)
 
             if test_response.status_code == 200:
-                # Check if response is JSON with expected structure
                 try:
                     data = test_response.json()
-                    # Oase API returns items in various formats
-                    if data and (isinstance(data, list) or
-                                'Items' in data or
-                                'items' in data or
-                                'Products' in data or
-                                'Data' in data or
-                                len(data) > 0):
+                    if data and 'Products' in data:
                         self.authenticated = True
                         print(f"  ✓ API access confirmed")
                         return True
-                except:
-                    # Not JSON or different structure
+                except Exception:
                     pass
 
-            # If we got here, authentication didn't work
             raise Exception(
                 f"Could not access API after login. "
                 f"Status: {test_response.status_code}. "
@@ -144,23 +135,13 @@ class OaseOutdoorsSupplier(BaseSupplier):
             response.raise_for_status()
             data = response.json()
 
-            # Parse response - Oase API structure
+            # Parse response - new Oase API returns {"Products": [...], ...}
             items = []
 
-            # Handle different response structures
             if isinstance(data, list):
                 items = data
             elif isinstance(data, dict):
-                # Try common key names
-                items = (
-                    data.get('Items') or
-                    data.get('items') or
-                    data.get('Products') or
-                    data.get('products') or
-                    data.get('Data') or
-                    data.get('data') or
-                    []
-                )
+                items = data.get('Products') or data.get('Items') or data.get('items') or []
 
             print(f"  Received {len(items)} items from API")
 
@@ -186,11 +167,11 @@ class OaseOutdoorsSupplier(BaseSupplier):
         Returns:
             Standardized product dictionary
         """
-        # Extract EAN - try common field names
+        # Extract EAN - new API uses "Ean" key
         ean = (
+            item.get("Ean") or
             item.get("EAN") or
             item.get("ean") or
-            item.get("Ean") or
             item.get("Barcode") or
             item.get("barcode")
         )
