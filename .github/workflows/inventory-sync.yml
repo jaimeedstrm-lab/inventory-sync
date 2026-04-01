@@ -9,7 +9,7 @@ on:
 jobs:
   sync-oase:
     name: Sync Oase Outdoors
-    if: false  # PAUSAD - Oase portal nere, aktivera när den är uppe igen
+
     runs-on: ubuntu-latest
 
     steps:
